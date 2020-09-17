@@ -4,6 +4,7 @@
 #where z_(0) = c, where c is a complex number
 
 import matplotlib.pyplot as plt
+from matplotlib import cm
 import numpy as np
 
 def mandelbrot(N=500, maxiter = 100, scaled = True):
@@ -24,7 +25,9 @@ def mandelbrot(N=500, maxiter = 100, scaled = True):
           Mset[i,k] = np.log(n+1) if scaled else 1
           break
 
-    return Mset
+  return Mset
 
-plt.imshow(mandelbrot(scaled=True))
-plt.gray()
+plt.imshow(mandelbrot(scaled=False))
+#plt.gray()
+plt.imshow(mandelbrot(),cmap=cm.inferno)
+plt.show()

@@ -55,7 +55,7 @@ def animate3d(i):
 
 ani = ani.FuncAnimation(fig, animate, len(statet[:,0]), interval = 5, blit=False)
 #ani3d  = ani.FuncAnimation(fig, animate3d, len(statet[:,0]), interval = 5, blit=False)
-plt.plot(statet[:,0],statet[:,1])
+#plt.plot(statet[:,0],statet[:,1])
 ani.save('2dlorrenz.gif', writer='ffmpeg')
 plt.show()
 

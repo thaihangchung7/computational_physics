@@ -1,0 +1,207 @@
+ ccccccccccccccccccccccccccccccccccccccc
+ccccccc neural network parameters
+ccccccccccccccccccccccccccccccccccccccc
+        parameter (n_input=4)
+        parameter (n_hidden=3)
+        parameter (n_out=2)
+
+        real w_ij (n_input,n_hidden)
+        real dw_ij(n_input,n_hidden)
+
+        real w_jl (n_hidden,n_out)
+        real dw_jl(n_hidden,n_out)
+
+        real x(n_input)
+        real y(n_out)
+        real z(n_hidden)
+        real d(n_out)
+
+        real net_j(n_hidden)
+        real net_l(n_out)
+
+        real lambda_o
+        real lambda_h
+
+        integer, parameter :: seed = 86456
+
+        parameter (eta_h=0.5)
+        parameter (eta_o=0.8)
+        parameter (lambda_h=0.6)
+        parameter (lambda_o=1.6)
+
+cccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccc
+
+        w_ij(1,1)=0.5
+        w_ij(1,2)=0.3
+        w_ij(1,3)=0.9
+
+        w_ij(2,1)=0.1
+        w_ij(2,2)=0.2
+        w_ij(2,3)=0.4
+
+        w_ij(3,1)=0.3
+        w_ij(3,2)=0.4
+        w_ij(3,3)=0.1
+
+        w_ij(4,1)=0.2
+        w_ij(4,2)=0.8
+        w_ij(4,3)=0.5
+
+
+        w_jl(1,1)=0.1
+        w_jl(1,2)=0.4
+
+        w_jl(2,1)=0.3
+        w_jl(2,2)=0.2
+
+        w_jl(3,1)=0.4
+        w_jl(3,2)=0.7
+
+        x(1)=0.1
+        x(2)=0.2
+        x(3)=0.3
+        x(4)=0.4
+
+        d(1)=0.2
+        d(2)=0.3
+
+cccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccc
+
+        call srand(seed)
+
+ccccccccccccccccccccccccccccccccccccccccccccccccccccc
+ccccccccccccccccccccccccccccccccccccccccccccccccccccc
+ccccccccccccc   Neural Network   cccccccccccccccccccc
+ccccccccccccccccccccccccccccccccccccccccccccccccccccc
+ccccccccccccccccccccccccccccccccccccccccccccccccccccc
+
+
+ccccc   ccccccccccccccccccccccccccc
+ccccc   Initinal weight
+ccccc   ccccccccccccccccccccccccccc
+
+        do 10001 i=1,n_input
+        do 10001 j=1,n_hidden
+c       w_ij(i,j)=1.0*rand()
+10001   continue
+
+        do 10002 j=1,n_hidden
+        do 10002 l=1,n_out
+c       w_jl(j,l)=1.0*rand()
+10002   continue
+
+
+
+        k_total_pattern=1
+        i_total_epochs=1
+        E_error_min=0.001
+
+ccccc   ccccccccccccccccccccccccccc
+cccc    one epoch = all avaibale input learning samples
+ccccc   ccccccccccccccccccccccccccc
+        do 50005 iepochs=1,i_total_epochs
+
+
+        sum_error=0
+        do 20000 k_pattern=1,k_total_pattern
+
+
+ccccc   {x} input pattern
+        do 10003 i=1,n_input
+c       x(i)=rank_in(i,k_pattern)
+10003   continue
+
+ccccc   {d} desired output pattern
+        do 10004 l=1,n_out
+c       d(l)=rank_out(l,k_pattern)
+10004   continue
+
+ccccc   neural network learning
+        do 10020 j=1,n_hidden
+        sum=0
+        do 10010 i=1,n_input
+        sum=sum+w_ij(i,j)*x(i)
+10010   continue
+        net_j(j)=sum
+        z(j)=1.0/(1+exp(-lambda_h*sum))
+        print *, 'j=',j, ' z(j)=',z(j)
+10020   continue
+        print *, '================'
+
+        do 10040 l=1,n_out
+        sum=0
+        do 10030 j=1,n_hidden
+        sum=sum+w_jl(j,l)*z(j)
+10030   continue
+        net_l(l)=sum
+        y(l)=1.0/(1+exp(-lambda_o*sum))
+        print *, 'l=',l, ' y(l)=',y(l)
+10040   continue
+        print *, '================'
+
+
+        do 10060 j=1,n_hidden
+        do 10060 l=1,n_out
+        dw_jl(j,l)=
+     +  eta_o*(d(l)-y(l))*lambda_o*(1-y(l))*y(l)*z(j)
+        print *, 'j=',j, ' l=',l, ' dw_jl=',dw_jl(j,l)
+10060   continue
+        print *, '================'
+
+        do 10080 i=1,n_input
+        do 10080 j=1,n_hidden
+        sum=0
+        do 10070 l=1,n_out
+        sum=sum+
+     +  (d(l)-y(l))*lambda_o*(1-y(l))*y(l)*w_jl(j,l)
+10070   continue
+        dw_ij(i,j)=
+     +  eta_h*sum*lambda_h*(1-z(j))*z(j)*x(i)
+        print *, 'i=',i, ' j=',j, ' dw_ij=',dw_ij(i,j)
+10080   continue
+        print *, '================'
+
+
+ccccc   neural weight adjusting
+        do 10085 j=1,n_hidden
+        do 10085 l=1,n_out
+        w_jl(j,l)=w_jl(j,l)+dw_jl(j,l)
+        print *, 'j=',j, ' l=',l, ' new: w_jl=',w_jl(j,l)
+10085   continue
+        print *, '================'
+
+        do 10086 i=1,n_input
+        do 10086 j=1,n_hidden
+        w_ij(i,j)=w_ij(i,j)+dw_ij(i,j)
+        print *, 'i=',i, ' j=',j, ' new: w_ij=',w_ij(i,j)
+10086   continue
+        print *, '================'
+
+
+ccccc   neural weight error
+        do 10100 l=1,n_out
+        sum_error=sum_error+0.5*(y(l)-d(l))**2
+10100   continue
+
+
+
+20000   continue
+        E_error=sum_error/(n_out*k_total_pattern)
+
+
+        print *,'epochs=',iepochs, ' E_error=', E_error
+        print *, '================'
+        if(E_error.lt.E_error_min) goto 11111
+
+50005   continue
+
+
+11111   ppp=1
+
+
+        stop
+        end

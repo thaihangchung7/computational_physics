@@ -20,11 +20,6 @@ y = np.zeros(N)
 change_x = np.zeros(N)
 change_y = np.zeros(N)
 
-#change_x = np.array(N)
-#change_y = np.array(N)
-#change_x = 0
-#change_y = 0
-
 eps_atom = 1
 beta = 1e-6
 sig_atom = 0.1
@@ -47,17 +42,10 @@ E_old = 0
 
 N_trial_move = 200
 
-
 index_traveled = np.zeros(shape=(N,N_trial_move))
 N_traveled = []
 
 dist_arr = []
-
-#i_anim = []
-#x_anim = []
-#y_anim = []
-#x_anim = np.zeros([N,N_trial_move,2])
-#y_anim = np.zeros([N,N_trial_move,2])
 
 x_anim = np.zeros([N_trial_move,N,2])
 y_anim = np.zeros([N_trial_move,N,2])
@@ -79,20 +67,11 @@ def initialization():
             y_init.append(y[counter])
 
             counter += 1
-            
-            #if counter == N:
-            #        print("Initialization Complete")
-            #print(N)
-
-            #print(counter)       
-    #print(counter)
-    #print(x,y)
 
 @njit
 def distance(x1,y1,x2,y2):
-    """
-    Distance calculator between points x1 and x2
-    """
+    #Distance calculator between points x1 and x2
+
 
     dx = np.abs(x1 - x2)
     if dx > L/2.0:
@@ -100,8 +79,7 @@ def distance(x1,y1,x2,y2):
 
     dy = np.abs(y1 - y2)
     if dy > L/2.0:
-        dy = L - dy
-    
+        dy = L - dy 
     #print("distance calculated =" ,np.sqrt(dx**2 + dy**2), "|x1 = ", x1 , "|y1 = ", y1, "|x2 = ", x2, "|y2 =", y2)
 
     dist = np.sqrt(dx**2 + dy**2)
@@ -111,7 +89,7 @@ def distance(x1,y1,x2,y2):
     elif dist != 0:
         return dist
 
-@njit
+@njit(parallel=True)
 def LJ_potential(radial_dist):
     if radial_dist == 0:
         LJ = 0
@@ -133,7 +111,6 @@ def energy():
                 #print("y[i]=", y[i])
                 #print("y[j]=", x[j])
                 
-
                 #print("distance calculated = ", distance(x[i],y[i],x[j],y[j]))
                 sumt = sumt +  LJ_potential(distance(x[i],y[i],x[j],y[j]))
                 #print("sumt=",sumt)
@@ -143,17 +120,14 @@ def energy():
 def p_acc(E_o,E_n):
     #print("E_n (p_acc func)",E_n)
     #print("E_o (p_acc func)",E_o)
-
     dE = E_n - E_o
     #print("dE (p_acc func)=", dE)
     if dE < 0:
-        #p_acc = 1
         return 1
     else:
         #p_acc = np.exp(-beta*dE)
         #print("exp (p_acc_func) = ",np.exp(-beta*dE))
         return np.exp(-beta*dE)
-    #return p_acc
 
 def displace_from_og():
     return 0
@@ -164,18 +138,14 @@ def displacement(index):
     change_x[index] = x[index]
     change_y[index] = y[index]
 
-    #print("displaced x = ", change_x)
-    #print("displaced_y = ", change_y)
-
-    randx = np.random.randint(rN)/rN#%mod/mod #MOD?
-    randy = np.random.randint(rN)/rN#%mod/mod
+    randx = np.random.randint(rN)/rN
+    randy = np.random.randint(rN)/rN
 
     dx = dmax*(randx - 0.5)
     dy = dmax*(randy - 0.5)
 
     traveled = np.sqrt(dx**2 + dy**2)
     #index_traveled[index][0] = traveled
-
     #print("dx=",dx)
     #print("dy=",dy)
 
@@ -194,26 +164,14 @@ def displacement(index):
     
     return index, traveled, x[index], y[index]
 
-
-#def trial_move(E_old):
-
 def trial_move(trial_index):
     global E_old
 
-    #index = np.random.randint(N)
-    #print("index",index)
     for index in range(0,N):
         N_index, dist_trav, x_i, y_i = displacement(index)
-        #print(dist_trav)
+
         index_traveled[index][trial_index] = dist_trav
-        #i_anim.append(N_index)
 
-        #x_anim.append(x_i)
-        #y_anim.append(y_i)
-        #X,Y = np.meshgrid(x_i,y_i)
-
-        #x_anim[index][trial_index,0]=X
-        #y_anim[index][trial_index,1]=Y
         x_anim[trial_index][index,0]=x_i
         y_anim[trial_index][index,1]=y_i
 
@@ -236,9 +194,6 @@ def trial_move(trial_index):
             succ = 1
 
         else:
-            
-            #change_x.append(x[index])
-            #change_y.append(y[index])
 
             x[index] = change_x[index]
             y[index] = change_y[index]
@@ -252,7 +207,6 @@ def trial_move(trial_index):
 def progress(N,N_tot):
     return N/N_tot * 100
 
-
 def main():
     print("=================Start of Simulation====================")
 
@@ -265,27 +219,11 @@ def main():
     xy_anim = np.empty([N_trial_move,N,2])
 
     for i in range(0,N_trial_move):
-        #print("start of new trial move--------------------")
-        #print("trial_move (main func)= ",trial_move())
         E_old = energy()
-        #print("Initial Energy (main func) = ", E_old)
-        
+
         success, x_coord, y_coord = trial_move(i)
 
         N_succ += success
-
-        #print("E_old (main func) = ", E_old)
-        #X,Y = np.meshgrid(x_coord,y_coord)
-        #print(x_coord,y_coord)
-        #x_anim.append(X)
-        #y_anim.append(Y)
-
-        #x_anim[i][:,0] = x_coord
-        #y_anim[i][:,1] = y_coord
-        
-
-
-
 
         trial_arr.append(i)
         energy_per.append(E_old)
@@ -299,26 +237,13 @@ def main():
     for n in prange(0,N):
         n_trav = np.cumsum(index_traveled[n][:])
 
-
-        #dist_arr.append(n_trav)
-        #print(n_trav)
         ax2.plot(trial_arr,n_trav)
 
-    #print(energy_per)
-    #print(particle_tracker[5][0][0]) # particle_tracker[particle index][x coordinate][y coordinate] 
     E_avg = E_accu/N_trial_move
     print("Successful trials = ",N_succ/N_trial_move * 100)
     print("Average Energy = ", E_avg)
     print(xy_anim)
     print(np.shape(xy_anim))
-    #print(np.size(dist_arr))
-    #print(index_traveled)
-    #print(x)
-    #print(y)
-    #plt.hist(energy_arr)
-#initialization(1000)
-
-
 
 """Initialize Canvas for Figures"""
 fig = plt.figure(figsize=(10,5))
@@ -336,8 +261,6 @@ ax1.scatter(x,y,s=5,label="final positions")
 ax1.scatter(x_init,y_init,s=5,label = "intial positions")
 
 ax2.set_title("particle displacement")
-#ax2.plot(trial_arr,index_traveled[0][:])
-
 
 ax3.set_title("trial vs energy_accu")
 ax3.plot(trial_arr,energy_per,label="Trial Energies")
@@ -350,39 +273,28 @@ ax4.hist(energy_arr,bins=500)
 ax1.legend()
 ax3.legend()
 
-
-
 figanim, ax = plt.subplots()
-#scat = plt.scatter(x_anim,y_anim)
 
 def animate(i):
+
     figanim.clear()
     ax = figanim.add_subplot(111, aspect='equal', autoscale_on=False, xlim=(0, 1), ylim=(0, 1))
-    #the new axes must be re-formatted
     ax.set_xlim(0,L)
     ax.set_ylim(0,L)
-    #ax.grid(b=None)
     ax.set_xlabel('x [a]')
     ax.set_ylabel('y [a]')
-    # and the elements for this frame are added
+
     ax.text(0.02, 0.95, 'Time step = %d' % i, transform=ax.transAxes)
-   
     ax.grid(True,linestyle='--')
     
     print("progress =" , i)
-    
-    #print("index = ", particle_tracker[i][0])
-    #print("x = ",particle_tracker[i][1])
-    #print("y = ",particle_tracker[i][2])
     
     #print("x = ",x[i])
     #print("y = ",y[i])
 
     plotter = ax.scatter(x_anim[i][:N,0], y_anim[i][:N,1], s = 10)
-    #scat, = scat.set_offsets(data[:,:2])
-    #plotter.set_data(x_anim[i],y_anim[i])
 
-
+#Debug for anim
 #for i in range(0,N):
 #    plt.scatter(x_anim[i][:N,0],y_anim[i][:N,1])
 

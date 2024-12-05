@@ -5,9 +5,11 @@ import math
 import matplotlib.animation as animation
 #plt.rcParams['animation.ffmpeg_path'] = '/usr/bin/ffmpeg'
 from numpy import random
-from numba import jit, njit, prange, float64, int64
+from numba import jit, njit, prange
 
 """Defining initial variables"""
+
+parallel = False
 
 rN = 10000
 
@@ -21,7 +23,7 @@ change_x = np.zeros(N)
 change_y = np.zeros(N)
 
 eps_atom = 1
-beta = 1e-6
+beta = 1e-4
 sig_atom = 0.1
 
 dmax = 0.05*L
@@ -32,11 +34,9 @@ y_init = []
 x_array = []
 y_array = []
 
-
 energy_arr = []
 energy_per = []
 trial_arr = []
-
 
 E_old = 0
 
@@ -49,7 +49,6 @@ dist_arr = []
 
 x_anim = np.zeros([N_trial_move,N,2])
 y_anim = np.zeros([N_trial_move,N,2])
-
 
 def initialization():
     counter = 0
@@ -164,7 +163,7 @@ def displacement(index):
     
     return index, traveled, x[index], y[index]
 
-def trial_move(trial_index):
+def trial_move(trial_index): #parallel (non-physical, for cool animations)
     global E_old
 
     for index in range(0,N):
@@ -202,6 +201,57 @@ def trial_move(trial_index):
             succ = 0
         
     return succ, x_i, y_i
+
+def trial_move_single(trial_index):
+    global E_old
+
+    index = np.random.randint(N)
+    #print("index",index)
+    
+    N_index, dist_trav, x_i, y_i = displacement(index)
+    #print(dist_trav)
+    index_traveled[index][trial_index] = dist_trav
+    #i_anim.append(N_index)
+
+    #x_anim.append(x_i)
+    #y_anim.append(y_i)
+    #X,Y = np.meshgrid(x_i,y_i)
+
+    #x_anim[index][trial_index,0]=X
+    #y_anim[index][trial_index,1]=Y
+    x_anim[trial_index][index,0]=x_i
+    y_anim[trial_index][index,1]=y_i
+
+
+    E_o = E_old
+    E_n = energy()
+
+    #print("dE (trial_move func)= ", E_n - E_o)
+
+    p_temp = np.random.randint(rN)/rN
+    p_acc_func = p_acc(E_o,E_n)
+    #print("p_temp (trial_move func)",p_temp)
+    #print("p_acc (trial_move func)",p_acc_func)
+    dist_arr.append(p_acc_func)
+    
+    if p_temp<p_acc_func:
+        
+        E_old = E_n
+
+        succ = 1
+
+    else:
+        
+        #change_x.append(x[index])
+        #change_y.append(y[index])
+
+        x[index] = change_x[index]
+        y[index] = change_y[index]
+        #x[index] = change_x
+        #y[index] = change_y
+        succ = 0
+    
+    return succ, x_i, y_i
     
 @njit(fastmath=True)
 def progress(N,N_tot):
@@ -221,7 +271,10 @@ def main():
     for i in range(0,N_trial_move):
         E_old = energy()
 
-        success, x_coord, y_coord = trial_move(i)
+        if parallel == True:
+            success, x_coord, y_coord = trial_move(i)
+        elif parallel == False:
+            success, x_coord, y_coord = trial_move_single(i)
 
         N_succ += success
 
@@ -273,8 +326,6 @@ ax4.hist(energy_arr,bins=500)
 ax1.legend()
 ax3.legend()
 
-figanim, ax = plt.subplots()
-
 def animate(i):
 
     figanim.clear()
@@ -294,12 +345,20 @@ def animate(i):
 
     plotter = ax.scatter(x_anim[i][:N,0], y_anim[i][:N,1], s = 10)
 
-#Debug for anim
-#for i in range(0,N):
-#    plt.scatter(x_anim[i][:N,0],y_anim[i][:N,1])
 
-ani = animation.FuncAnimation(figanim, animate, interval=1, frames=200,repeat=True)
+if parallel == True:
+    figanim, ax = plt.subplots()
+
+    #Debug for anim
+    #for i in range(0,N):
+    #    plt.scatter(x_anim[i][:N,0],y_anim[i][:N,1])
+    ani = animation.FuncAnimation(figanim, animate, interval=1, frames=200,repeat=True)
+elif parallel == False:
+    pass
 
 plt.show()
 #writervideo = animation.FFMpegWriter(fps=60)
-ani.save('/home/thc/Documents/computational_physics/parallel_LJ_MC/LJ_anim.gif',writer='ffmpeg')
+if parallel == True:
+    ani.save('/home/thc/Documents/computational_physics/parallel_LJ_MC/LJ_anim.gif',writer='ffmpeg')
+elif parallel == False:
+    pass
